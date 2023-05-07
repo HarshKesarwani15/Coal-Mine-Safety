@@ -1,0 +1,72 @@
+//Blynk Authenticaation Details
+#define BLYNK_TEMPLATE_ID "TMPL3cTr0QT9c"
+#define BLYNK_TEMPLATE_NAME "Mini Project"
+#define BLYNK_AUTH_TOKEN "71IrtNBpIXDYqzFCwCLJZ5PDG4c8RkOw"
+
+#define BLYNK_PRINT Serial
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+
+char auth[] = "71IrtNBpIXDYqzFCwCLJZ5PDG4c8RkOw";
+char ssid[] = "Rajeshkesarwani";  // Enter your wifi name
+char pass[] = "12345678H";
+
+BlynkTimer timer;
+int pinValue = 0;
+
+#define Buzzer D7
+#define Sensor D2
+int smokeA0 = A0;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(Buzzer, OUTPUT);
+  pinMode(Sensor, INPUT);
+  pinMode(smokeA0, INPUT);
+  Blynk.begin(auth, ssid, pass,"blynk.cloud", 80);
+  timer.setInterval(1000L, notifiaction);
+}
+BLYNK_WRITE(V0) {
+  pinValue = param.asInt();
+}
+
+void notifiaction() {
+  int sensor = digitalRead(Sensor);
+  Blynk.virtualWrite(V2, sensor);
+  int smoke = analogRead(smokeA0);
+  Blynk.virtualWrite(V1, smoke);
+  if (pinValue == 1) {
+    Serial.println("System is ON");
+    if (sensor == 1) {
+      digitalWrite(Buzzer, LOW);
+    } 
+    else if(sensor == 0) {
+      Serial.println("Fire detected!");
+      Blynk.logEvent("fire_alert","Fire Detected");
+      digitalWrite(Buzzer, HIGH);
+      delay(1000);
+    }
+    else{
+      Serial.println(" No Fire detected!");
+    }
+    if(smoke > 75)     // Change the Threshold value
+    {
+      Serial.print("Smoke level: ");
+      Serial.println(smoke);
+      digitalWrite(Buzzer,HIGH);
+      delay(2000);
+      Blynk.logEvent("smoke_alert","Smoke Leakage Detected");
+    }
+    else{
+      Serial.println("No smoke detected!");
+    }
+  } 
+  else if (pinValue == 0) {
+    Serial.println("System is OFF");
+  }
+}
+
+void loop() {
+  Blynk.run();
+  timer.run();
+}
